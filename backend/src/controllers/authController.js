@@ -45,7 +45,6 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("JWT", process.env.JWT_SECRET_KEY);
     
     // Check for user
     const user = await User.findOne({ email });
