@@ -1,11 +1,14 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const connectDB = require("./src/config/database");
-const dotenv = require("dotenv");
 
-dotenv.config();
+// Routes
+const authRoutes = require('./src/routes/authRoutes')
+
 
 connectDB();
 
@@ -33,6 +36,9 @@ app.get('/', (req, res) => {
         message: 'Code Collab Project'
     })
 })
+
+// Api Routes
+app.use('/api/auth', authRoutes)
 
 io.on("connection", (socket) => {
     console.log("User Connected", socket.id);
