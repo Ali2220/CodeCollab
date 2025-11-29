@@ -4,6 +4,7 @@ const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const cookieParser = require('cookie-parser')
 const connectDB = require("./src/config/database");
 
 // Routes
@@ -30,6 +31,7 @@ app.use(cors({
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser())
 
 app.get('/', (req, res) => {
     res.json({
