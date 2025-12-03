@@ -106,6 +106,8 @@ const joinRoom = async (req, res) => {
       isActive: true,
     });
 
+    await room.save();
+
     // Add room to user's rooms
     await User.findByIdAndUpdate(req.user._id, {
       $addToSet: { rooms: room._id },
@@ -121,4 +123,56 @@ const joinRoom = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getRooms, getRoomById, joinRoom };
+// @desc    Leave room
+// @route   POST /api/rooms/:roomId/leave
+// @access  Private
+const leaveRoom = async (req, res) => {
+  try{
+    const room = await Room.findOne({roomId: req.params.roomId});
+
+    if(!room){
+      return res.status(404).json({message: 'Room not found'})
+    }
+
+    // Logged-in user ko participants list se hatao
+    room.participants = room.participants.filter(
+      p => p.user.toString() !== req.user._id.toString()
+    )
+
+    await room.save()
+
+    res.json({message: 'Left Room Successfully'})
+
+  }catch(error){
+    res.status(500).json({message: error.message})
+  } 
+}
+
+// @desc    Delete room
+// @route   DELETE /api/rooms/:roomId
+// @access  Private
+const deleteRoom = async (req, res) => {
+  try{
+    const room = await Room.findOne({roomId: req.params.roomId})
+
+    if(!room){
+      return res.status(404).json({message: 'Room not found'})
+    }
+
+    // Check if loggedin user is creator (agr loggedin user room creator hai, tb hi room delete kar skta hai.)
+    if(room.creator.toString() !== req.user._id.toString()){
+      return res.status(403).json({message: 'Not Authorized'})
+    }
+
+    // hum yahn par soft delete kar rhe hain, mtlb db se data nhi ura rhe, sirf room ko inactive kr rhe hain.
+    room.isActive = false
+    await room.save()
+    
+    res.json({message: 'Room Deleted Successfully'})
+
+  }catch(error){
+    res.status(500).json({message: error.message})
+  }
+}
+
+module.exports = { createRoom, getRooms, getRoomById, joinRoom, leaveRoom, deleteRoom };
