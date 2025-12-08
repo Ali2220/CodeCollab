@@ -10,6 +10,7 @@ const connectDB = require("./src/config/database");
 // Routes
 const authRoutes = require('./src/routes/authRoutes')
 const roomRoutes = require('./src/routes/roomRoutes')
+const codeRoutes = require('./src/routes/codeRoutes')
 
 connectDB();
 
@@ -42,6 +43,7 @@ app.get('/', (req, res) => {
 // Api Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/rooms', roomRoutes)
+app.use('/api/code', codeRoutes)
 
 io.on("connection", (socket) => {
     console.log("User Connected", socket.id);
