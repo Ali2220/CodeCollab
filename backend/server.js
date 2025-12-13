@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const cookieParser = require('cookie-parser')
 const connectDB = require("./src/config/database");
+const {initializeSocket} = require('./src/socket/socketHandler')
 
 // Routes
 const authRoutes = require('./src/routes/authRoutes')
@@ -47,10 +48,8 @@ app.use('/api/rooms', roomRoutes)
 app.use('/api/code', codeRoutes)
 app.use('/api/ai', aiRoutes)
 
-io.on("connection", (socket) => {
-    console.log("User Connected", socket.id);
-    
-})
+// Socket.IO Handler
+initializeSocket(io)
 
 httpServer.listen(3000, () => {
     console.log('Server Started on port 3000');
