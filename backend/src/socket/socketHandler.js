@@ -30,7 +30,7 @@ const initializeSocket = (io) => {
           message: `${userName} joined the room`,
         });
 
-        // Get Current room data
+        // Get Current room data  (Sirf iss user ko room ka current code, language, participants dikhao)
         const room = await Room.findOne({ roomId });
         socket.emit("room_data", {
           currentCode: room.currentCode,
@@ -42,6 +42,26 @@ const initializeSocket = (io) => {
       } catch (error) {
         console.log("join room error", error);
         socket.emit("error", { message: "Failed to join room" });
+      }
+    });
+
+    // Code Change event ( User ne code change kia )
+    socket.on("code_change", async ({ roomId, code, userId, userName }) => {
+      try {
+        // Update room's current code ( Latest code DB me save hua )
+        await Room.findOneAndUpdate({ roomId }, { currentCode: code });
+
+        // Broadcast room's current code ( Sab ko update (except sender) )
+        socket.to(roomId).emit("code_update", {
+          code,
+          userId,
+          userName,
+          timeStamp: new Date(),
+        });
+
+        console.log(`Code update in room ${roomId} by ${userName}`);
+      } catch (error) {
+        console.error("Code change error:", error);
       }
     });
   });
