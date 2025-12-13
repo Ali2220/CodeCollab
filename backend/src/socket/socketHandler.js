@@ -8,7 +8,7 @@ const initializeSocket = (io) => {
   io.on("connection", (socket) => {
     console.log(`✅ New Connection: ${socket.id}`);
 
-    // User bolta hai: "Bhai mujhe is room me ghusa do"
+    // User join room event ( User bolta hai: "Bhai mujhe is room me ghusa do" )
     socket.on("join_room", async ({ roomId, userId, userName }) => {
       try {
         // User room me enter
@@ -46,12 +46,30 @@ const initializeSocket = (io) => {
     });
 
     // Code Change event ( User ne code change kia )
+
     socket.on("code_change", async ({ roomId, code, userId, userName }) => {
       try {
+        const room = await Room.findOne({ roomId });
+
+        if (!room) {
+          return socket.emit("room_found_error", { message: "Room not found" });
+        }
+
+        const isUserInRoom = room.participants.some(
+          (p) => p.user.toString() === userId && p.isActive
+        );
+
+        if (!isUserInRoom) {
+          console.log("❌ User is not in room");
+          return socket.emit("user_found_error", {
+            message: "Join the room first",
+          });
+        }
+
         // Update room's current code ( Latest code DB me save hua )
         await Room.findOneAndUpdate({ roomId }, { currentCode: code });
 
-        // Broadcast room's current code ( Sab ko update (except sender) )
+        // Broadcast room's current code ( Sab ko update karo (except sender) )
         socket.to(roomId).emit("code_update", {
           code,
           userId,
