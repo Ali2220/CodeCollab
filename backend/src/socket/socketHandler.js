@@ -1,12 +1,40 @@
 const Room = require("../models/Room");
 const Message = require("../models/Message");
+const User = require("../models/User");
+const cookie = require("cookie");
+const jwt = require("jsonwebtoken");
 
 // Store active users with their socket IDs
 const activeUsers = new Map();
 
 const initializeSocket = (io) => {
+  // 🧩 Middleware: connection establish hone se pehle user ko verify karna
+  io.use(async (socket, next) => {
+    // Handshake se cookies nikal rahe hain (browser se bheji gayi)
+    const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
+
+    // Check karte hain ke token hai ya nahi
+    if (!cookies.token) {
+      next(new Error("Authentication Error: No token provided"));
+    }
+
+    // Ab token verify karte hain (JWT ke zariye)
+    try {
+      const decoded = jwt.verify(cookies.token, process.env.JWT_SECRET_KEY);
+      // Token se user ka ID mil gaya, ab DB se user nikal lo
+      const user = await User.findById(decoded.id);
+
+      // Loggedin user ka data socket.user mai rakh dia hai.
+      socket.user = user;
+      next();
+    } catch (error) {
+      next(new Error("Authentication error: Invalid token"));
+    }
+  });
+
+  // Socket.IO connection event
   io.on("connection", (socket) => {
-    console.log(`✅ New Connection: ${socket.id}`);
+    console.log(`✅ New Connection: ${socket.id} ${socket.user.name}`);
 
     // User join room event ( User bolta hai: "Bhai mujhe is room me ghusa do" )
     socket.on("join_room", async ({ roomId, userId, userName }) => {
@@ -46,7 +74,6 @@ const initializeSocket = (io) => {
     });
 
     // Code Change event ( User ne code change kia )
-
     socket.on("code_change", async ({ roomId, code, userId, userName }) => {
       try {
         const room = await Room.findOne({ roomId });
@@ -55,6 +82,7 @@ const initializeSocket = (io) => {
           return socket.emit("room_found_error", { message: "Room not found" });
         }
 
+        // Agr user room mai hai, tab hi room ka code change kr skta hai, wrna nhi karskta.
         const isUserInRoom = room.participants.some(
           (p) => p.user.toString() === userId && p.isActive
         );
