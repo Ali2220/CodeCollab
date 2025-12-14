@@ -37,28 +37,55 @@ const initializeSocket = (io) => {
     console.log(`✅ New Connection: ${socket.id} ${socket.user.name}`);
 
     // User join room event ( User bolta hai: "Bhai mujhe is room me ghusa do" )
-    socket.on("join_room", async ({ roomId, userId, userName }) => {
+    socket.on("join_room", async ({ roomId }) => {
       try {
-        // User room me enter
+        // Room check
+        const findRoom = await Room.findOne({ roomId });
+        if (!findRoom) {
+          return socket.emit("room_found_error", { message: "Room not found" });
+        }
+
+        // Logged-in user info
+        const userId = socket.user._id;
+        const userName = socket.user.name;
+
+        // Socket ko room me join karado
         socket.join(roomId);
 
-        // Map me save kar liya user ka data (memory me)
+        // Map me save karo
         activeUsers.set(socket.id, { userId, userName, roomId });
 
-        // DB me user online mark kia hai
-        await Room.updateOne(
-          { roomId, "participants.user": userId },
-          { $set: { "participants.$.isAcive": true } }
+        // Participants me check karo: user already hai ya nahi
+        const isAlreadyParticipant = findRoom.participants.some(
+          (p) => p.user.toString() === userId.toString()
         );
 
-        // Room ke baqi users ko msg kro ke aik user ne room join kia hai. (sender ko nahi)
+        if (!isAlreadyParticipant) {
+          // Naya participant add karo
+          await Room.updateOne(
+            { roomId },
+            {
+              $push: {
+                participants: { user: userId, name: userName, isActive: true },
+              },
+            }
+          );
+        } else {
+          // Agar already participant hai, to bas isActive true karo
+          await Room.updateOne(
+            { roomId, "participants.user": userId },
+            { $set: { "participants.$.isActive": true } }
+          );
+        }
+
+        // Baaki users ko notify karo ke ek user join hua
         socket.to(roomId).emit("user_joined", {
           userId,
           userName,
           message: `${userName} joined the room`,
         });
 
-        // Get Current room data  (Sirf iss user ko room ka current code, language, participants dikhao)
+        // Room ka current data sirf iss user ko bhejo
         const room = await Room.findOne({ roomId });
         socket.emit("room_data", {
           currentCode: room.currentCode,
@@ -68,15 +95,17 @@ const initializeSocket = (io) => {
 
         console.log(`${userName} joined room ${roomId}`);
       } catch (error) {
-        console.log("join room error", error);
+        console.error("join room error", error);
         socket.emit("error", { message: "Failed to join room" });
       }
     });
 
     // Code Change event ( User ne code change kia )
-    socket.on("code_change", async ({ roomId, code, userId, userName }) => {
+    socket.on("code_change", async ({ roomId, code }) => {
       try {
         const room = await Room.findOne({ roomId });
+        const userId = socket.user._id;
+        const userName = socket.user.name;
 
         if (!room) {
           return socket.emit("room_found_error", { message: "Room not found" });
@@ -84,7 +113,7 @@ const initializeSocket = (io) => {
 
         // Agr user room mai hai, tab hi room ka code change kr skta hai, wrna nhi karskta.
         const isUserInRoom = room.participants.some(
-          (p) => p.user.toString() === userId && p.isActive
+          (p) => p.user.toString() === userId.toString() && p.isActive
         );
 
         if (!isUserInRoom) {
@@ -108,6 +137,80 @@ const initializeSocket = (io) => {
         console.log(`Code update in room ${roomId} by ${userName}`);
       } catch (error) {
         console.error("Code change error:", error);
+      }
+    });
+
+    // Cursor postion event (Live cursor movement)
+    socket.on("cursor_position", async ({ roomId, position }) => {
+      const room = await Room.findOne({ roomId });
+      // loggedin user ki id and name nikala hai.
+      const userId = socket.user._id;
+      const userName = socket.user.name;
+
+      if (!room) {
+        return socket.emit("room_found_error", { message: "Room not found" });
+      }
+
+      // Agr user room mai hai, tab hi cursor move kr skta hai, wrna nhi karskta.
+      const isUserInRoom = room.participants.some(
+        (p) => p.user.toString() === userId.toString() && p.isActive
+      );
+
+      if (!isUserInRoom) {
+        console.log("❌ User is not in room");
+        return socket.emit("user_found_error", {
+          message: "Join the room first",
+        });
+      }
+
+      // Ab is data ko room ke BAAKI SAB Members ko bhejo (sender ko nahi)
+      socket.to(roomId).emit("cursor_update", {
+        position,
+        userId,
+        userName,
+      });
+    });
+
+    // Chat message event
+    socket.on("send_message", async ({ roomId, message }) => {
+      try {
+        const room = await Room.findOne({ roomId });
+        const userId = socket.user._id;
+        const userName = socket.user.name;
+
+        if (!room) {
+          return socket.emit("room_found_error", { message: "Room not found" });
+        }
+
+        // Agr user room mai hai, tab hi message send kr skta hai
+        const isUserInRoom = room.participants.some(
+          (p) => p.user.toString() === userId.toString() && p.isActive
+        );
+
+        if (!isUserInRoom) {
+          console.log("❌ User is not in room");
+          return socket.emit("user_found_error", {
+            message: "Join the room first",
+          });
+        }
+
+        const newMessage = await Message.create({
+          room: room._id,
+          sender: userId,
+          content: message,
+          type: "text",
+        });
+
+        const populatedMessage = await Message.findById(
+          newMessage._id
+        ).populate("sender", "name email avatar");
+
+        // Broadcast to all in room (including sender)
+        io.to(roomId).emit("receive_message", populatedMessage);
+
+        console.log(`💬 Message in room ${roomId} from ${userName}`);
+      } catch (error) {
+        console.error("Send message error:", error);
       }
     });
   });
