@@ -49,7 +49,7 @@ const initializeSocket = (io) => {
         const userId = socket.user._id;
         const userName = socket.user.name;
 
-        // Socket ko room me join karado
+        // User ko room me join karado
         socket.join(roomId);
 
         // Map me save karo
@@ -211,6 +211,46 @@ const initializeSocket = (io) => {
         console.log(`💬 Message in room ${roomId} from ${userName}`);
       } catch (error) {
         console.error("Send message error:", error);
+      }
+    });
+
+    // Language change event
+    socket.on("language_change", async ({ roomId, language }) => {
+      try {
+        const room = await Room.findOne({ roomId });
+        if (!room) {
+          return socket.emit("room_found_error", { message: "Room not found" });
+        }
+
+        const userId = socket.user._id;
+        const userName = socket.user.name;
+
+        // ✅ Check: user room ka active member hai ya nahi
+        const isUserInRoom = room.participants.some(
+          (p) => p.user.toString() === userId.toString() && p.isActive
+        );
+
+        if (!isUserInRoom) {
+          console.log("❌ User not in room, language change blocked");
+          return socket.emit("user_found_error", {
+            message: "Join the room first",
+          });
+        }
+
+        // ✅ Update language in DB
+        await Room.updateOne({ roomId }, { language });
+
+        // ✅ Sab users ko broadcast (including sender)
+        io.to(roomId).emit("language_updated", {
+          language,
+          changedBy: userName,
+        });
+
+        console.log(
+          `🔄 Language changed to ${language} in room ${roomId} by ${userName}`
+        );
+      } catch (error) {
+        console.error("Language change error:", error);
       }
     });
   });
