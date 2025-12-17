@@ -253,6 +253,26 @@ const initializeSocket = (io) => {
         console.error("Language change error:", error);
       }
     });
+
+    // WebRTC signaling for video/audio
+
+    // Invite to call
+    socket.on("webrtc_offer", ({ roomId, offer }) => {
+      const userId = socket.user._id;
+      socket.to(roomId).emit("webrtc_offer", { offer, userId });
+    });
+
+    // Accept to call
+    socket.on("webrtc_answer", ({ roomId, answer }) => {
+      const userId = socket.user._id;
+      socket.to(roomId).emit("webrtc_answer", { answer, userId });
+    });
+
+    // Network Paths
+    socket.on("webrtc_ice_candidate", ({ roomId, candidate }) => {
+      const userId = socket.user._id;
+      socket.to(roomId).emit("webrtc_ice_candidate", { candidate, userId });
+    });
   });
 };
 
