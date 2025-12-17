@@ -257,21 +257,93 @@ const initializeSocket = (io) => {
     // WebRTC signaling for video/audio
 
     // Invite to call
-    socket.on("webrtc_offer", ({ roomId, offer }) => {
+    // WebRTC Offer (Call start)
+    socket.on("webrtc_offer", async ({ roomId, offer }) => {
       const userId = socket.user._id;
+
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isUserInRoom = room.participants.some(
+        (p) => p.user.toString() === userId.toString() && p.isActive
+      );
+
+      if (!isUserInRoom) return;
+
       socket.to(roomId).emit("webrtc_offer", { offer, userId });
     });
 
-    // Accept to call
-    socket.on("webrtc_answer", ({ roomId, answer }) => {
+    // WebRTC Answer (Call accept)
+    socket.on("webrtc_answer", async ({ roomId, answer }) => {
       const userId = socket.user._id;
+
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isUserInRoom = room.participants.some(
+        (p) => p.user.toString() === userId.toString() && p.isActive
+      );
+
+      if (!isUserInRoom) return;
+
       socket.to(roomId).emit("webrtc_answer", { answer, userId });
     });
 
-    // Network Paths
-    socket.on("webrtc_ice_candidate", ({ roomId, candidate }) => {
+    // ICE Candidate (Network paths)
+    socket.on("webrtc_ice_candidate", async ({ roomId, candidate }) => {
       const userId = socket.user._id;
+
+      const room = await Room.findOne({ roomId });
+      if (!room) return;
+
+      const isUserInRoom = room.participants.some(
+        (p) => p.user.toString() === userId.toString() && p.isActive
+      );
+
+      if (!isUserInRoom) return;
+
       socket.to(roomId).emit("webrtc_ice_candidate", { candidate, userId });
+    });
+
+    // User starts typing
+    socket.on("typing_start", ({ roomId }) => {
+      const userName = socket.user.name;
+      socket.to(roomId).emit("user_typing", { userName, isTyping: true });
+    });
+
+    // User stops typing
+    socket.on("typing_stop", ({ roomId }) => {
+      const userName = socket.user.name;
+      socket.to(roomId).emit("user_typing", { userName, isTyping: false });
+    });
+
+    // Leave Room
+    socket.on("leave_room", async ({ roomId }) => {
+      try {
+        const userId = socket.user._id;
+        const userName = socket.user.name;
+
+        // user ko real-time communication se remove kar rhe hain.
+        socket.leave(roomId);
+
+        // Update room participants status
+        await Room.findOneAndUpdate(
+          { roomId, "participants.user": userId },
+          { $set: { "participants.$.isActive": false } }
+        );
+
+        // Notify others
+        socket.to(roomId).emit("user_left", {
+          userId,
+          userName,
+          message: `${userName} left the room`,
+        });
+
+        activeUsers.delete(socket.id);
+        console.log(`👋 ${userName} left room ${roomId}`);
+      } catch (error) {
+        console.error("Leave room error:", error);
+      }
     });
   });
 };
