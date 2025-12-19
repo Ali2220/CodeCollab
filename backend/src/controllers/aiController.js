@@ -1,4 +1,4 @@
-const { getGeminiModel } = require("../config/gemini");
+const { getGeminiModel } = require("../services/gemini");
 
 // desc Get code suggestions
 // route /api/ai/suggest

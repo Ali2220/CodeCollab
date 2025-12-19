@@ -7,6 +7,7 @@ const cors = require("cors");
 const cookieParser = require('cookie-parser')
 const connectDB = require("./src/config/database");
 const {initializeSocket} = require('./src/socket/socketHandler')
+const errorHandler = require('./src/middleware/errorHandler')
 
 // Routes
 const authRoutes = require('./src/routes/authRoutes')
@@ -50,6 +51,11 @@ app.use('/api/ai', aiRoutes)
 
 // Socket.IO Handler
 initializeSocket(io)
+
+
+// Error Handler (should be last)
+app.use(errorHandler)
+
 
 httpServer.listen(3000, () => {
     console.log('Server Started on port 3000');
