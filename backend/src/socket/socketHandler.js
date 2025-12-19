@@ -15,7 +15,7 @@ const initializeSocket = (io) => {
 
     // Check karte hain ke token hai ya nahi
     if (!cookies.token) {
-      next(new Error("Authentication Error: No token provided"));
+      return next(new Error("Authentication Error: No token provided"));
     }
 
     // Ab token verify karte hain (JWT ke zariye)
@@ -28,7 +28,7 @@ const initializeSocket = (io) => {
       socket.user = user;
       next();
     } catch (error) {
-      next(new Error("Authentication error: Invalid token"));
+      return next(new Error("Authentication error: Invalid token"));
     }
   });
 
@@ -343,6 +343,35 @@ const initializeSocket = (io) => {
         console.log(`👋 ${userName} left room ${roomId}`);
       } catch (error) {
         console.error("Leave room error:", error);
+      }
+    });
+
+    // Handle disconnection
+    socket.on("disconnect", async () => {
+      try {
+        const user = activeUsers.get(socket.id);
+
+        if (user) {
+          const { roomId, userId, userName } = user;
+
+          // Update room participants status
+          await Room.findOneAndUpdate(
+            { roomId, "participants.user": userId },
+            { $set: { "participants.$.isActive": false } }
+          );
+
+          // Notify Others
+          socket.to(roomId).emit("user_left", {
+            userId,
+            userName,
+            message: `${userName} disconnected`,
+          });
+
+          activeUsers.delete(socket.id);
+          console.log(`🔌 ${userName} disconnected from room ${roomId}`);
+        }
+      } catch (error) {
+        console.error("Disconnect error:", error);
       }
     });
   });
