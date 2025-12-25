@@ -1,19 +1,56 @@
-// User logged-in hai ya nahi, kaun hai, login/logout ka kaam — sab yahin handle hota hai
+/*
+ * ============================================
+ * AUTH CONTEXT - User Authentication State
+ * ============================================
+ * 
+ * This file manages the user's login state across the entire app.
+ * 
+ * What is Context in React?
+ * Context is like a "global storage" that any component can access.
+ * Instead of passing user data through every component (called "prop drilling"),
+ * we store it here and any component can grab it when needed.
+ * 
+ * This context provides:
+ * - user: The logged-in user's data (or null if not logged in)
+ * - loading: Whether we're checking if user is logged in
+ * - login(): Function to log in
+ * - register(): Function to create account
+ * - logout(): Function to log out
+ * - isAuthenticated: Boolean - is user logged in?
+ */
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getToken, getUser, removeToken, removeUser } from '../utils/storage';
-import * as authService from '../services/authService';
+import { getToken, getUser } from '../utils/storage';
+import * as api from '../utils/api';
 
-// Create Auth Context
+// ============================================
+// CREATE CONTEXT
+// ============================================
+
+// Create the context (like creating a box to store data)
 const AuthContext = createContext();
 
-// AuthProvider — boss component 👑 (Matlab: Jo bhi iske andar hoga, wo auth data use kar sakta hai.)
+// ============================================
+// AUTH PROVIDER COMPONENT
+// ============================================
+// This component wraps our app and provides auth data to all children
+
 export const AuthProvider = ({ children }) => {
-  // State for user and loading
+  // ============================================
+  // STATE
+  // ============================================
+  
+  // Store the current user (null if not logged in)
   const [user, setUser] = useState(null);
+  
+  // Track if we're still checking if user is logged in
   const [loading, setLoading] = useState(true);
 
-  // Check if user is logged in on app load
+  // ============================================
+  // CHECK IF USER IS ALREADY LOGGED IN
+  // ============================================
+  // This runs once when the app first loads
+  
   useEffect(() => {
     const initAuth = () => {
       // Get token and user from localStorage
@@ -25,51 +62,84 @@ export const AuthProvider = ({ children }) => {
         setUser(savedUser);
       }
 
+      // Done checking
       setLoading(false);
     };
 
     initAuth();
-  }, []);
+  }, []); // Empty array means this runs only once
 
-  // Register function
+  // ============================================
+  // REGISTER FUNCTION
+  // ============================================
+  // Create a new user account
+  
   const register = async (userData) => {
     try {
-      const response = await authService.register(userData);
+      // Call the register API
+      const response = await api.register(userData);
+      
+      // Save user to state
       setUser(response);
+      
       return response;
     } catch (error) {
+      // If error, throw it so the component can show error message
       throw error;
     }
   };
 
-  // Login function
+  // ============================================
+  // LOGIN FUNCTION
+  // ============================================
+  // Log in an existing user
+  
   const login = async (credentials) => {
     try {
-      const response = await authService.login(credentials);
+      // Call the login API
+      const response = await api.login(credentials);
+      
+      // Save user to state
       setUser(response);
+      
       return response;
     } catch (error) {
       throw error;
     }
   };
 
-  // Logout function
+  // ============================================
+  // LOGOUT FUNCTION
+  // ============================================
+  // Log out the current user
+  
   const logout = () => {
-    authService.logout();
+    // Clear localStorage
+    api.logout();
+    
+    // Clear user from state
     setUser(null);
   };
 
-  // Context value 
-  // Ye sab global ho gaya 🌍 Koi bhi component use kar sakta hai
+  // ============================================
+  // CONTEXT VALUE
+  // ============================================
+  // This is what components can access
+  
   const value = {
-    user,
-    loading,
-    register,
-    login,
-    logout,
-    isAuthenticated: !!user, // true if user exists
+    user,                          // Current user data
+    loading,                       // Is still checking login status?
+    register,                      // Function to register
+    login,                         // Function to login
+    logout,                        // Function to logout
+    isAuthenticated: !!user,       // Boolean: is user logged in? (!! converts to boolean)
   };
 
+  // ============================================
+  // PROVIDE CONTEXT TO CHILDREN
+  // ============================================
+  // Wrap children with the context provider
+  
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -77,11 +147,19 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use auth context
+// ============================================
+// CUSTOM HOOK TO USE AUTH CONTEXT
+// ============================================
+// This makes it easy to use auth in any component
+
 export const useAuth = () => {
+  // Get the context
   const context = useContext(AuthContext);
+  
+  // If context is undefined, we're using it outside of AuthProvider
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
+  
   return context;
 };

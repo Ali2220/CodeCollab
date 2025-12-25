@@ -346,6 +346,46 @@ const initializeSocket = (io) => {
       }
     });
 
+    // ============================================
+    // VIDEO CALL EVENTS
+    // ============================================
+
+    // Start call event - notify all other users in the room
+    socket.on("start_call", async ({ roomId, userName, userId }) => {
+      try {
+        console.log(`📞 ${userName} started a call in room ${roomId}`);
+        
+        // Broadcast to all other users in the room (not the sender)
+        socket.to(roomId).emit("call_started", {
+          userName,
+          userId,
+          message: `${userName} started a video call`,
+        });
+      } catch (error) {
+        console.error("Start call error:", error);
+      }
+    });
+
+    // End call event - notify all other users in the room
+    socket.on("end_call", async ({ roomId, userName, userId }) => {
+      try {
+        console.log(`📴 ${userName} ended the call in room ${roomId}`);
+        
+        // Broadcast to all other users in the room
+        socket.to(roomId).emit("call_ended", {
+          userName,
+          userId,
+          message: `${userName} ended the video call`,
+        });
+      } catch (error) {
+        console.error("End call error:", error);
+      }
+    });
+
+    // ============================================
+    // DISCONNECT EVENT
+    // ============================================
+
     // Handle disconnection
     socket.on("disconnect", async () => {
       try {

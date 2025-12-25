@@ -1,41 +1,43 @@
-// constants.js ek utility file (Aisi file jo Bar-bar use honay wali cheezein rakhti hai) hoti hai jahan hum API URLs, routes aur storage keys ko centralize karte hain taake app maintainable, scalable aur bug-free rahe.
+/*
+ * ============================================
+ * CONSTANTS - App-wide Configuration
+ * ============================================
+ * 
+ * This file stores all constant values used throughout the app.
+ * Having them in one place makes the app easier to maintain.
+ * 
+ * If you need to change the backend URL or add new routes,
+ * you only need to update this file!
+ */
 
-// Backend Api Base Url
-export const API_BASE_URL = "http://localhost:3000/api";
+// ============================================
+// LOCALSTORAGE KEYS
+// ============================================
+// Keys used to store data in browser's localStorage
 
-// Api Endpoints
-export const API_ENDPOINTS = {
-  // Auth endpoints
-  AUTH: {
-    REGISTER: "/auth/register",
-    LOGIN: "/auth/login",
-    PROFILE: "/auth/profile",
-  },
-
-  // Room endpoints
-  ROOMS: {
-    GET_ALL: "/rooms",
-    CREATE: "/rooms",
-    GET_BY_ID: (roomId) => `/rooms/${roomId}`,
-    JOIN: (roomId) => `/rooms/${roomId}/join`,
-    LEAVE: (roomId) => `/rooms/${roomId}/leave`,
-    DELETE: (roomId) => `/rooms/${roomId}`,
-  },
-};
-
-// LocalStorage keys
-// ye use hue gi localstorage mai token and loggedin data store krne ke liye... Example (localStorage.setItem(STORAGE_KEYS.TOKEN, token))
 export const STORAGE_KEYS = {
-  TOKEN: "token",
-  USER: "user",
+  TOKEN: "token",     // Authentication token
+  USER: "user",       // User information
 };
 
-// App Routes
-export const ROUTES = {
-  HOME: "/",
-  LOGIN: "/login",
-  REGISTER: "/register",
-  DASHBOARD: "/dashboard",
-  ROOM: "/room/:roomId",
-  PROFILE: "/profile",
-};
+// ============================================
+// PROGRAMMING LANGUAGES
+// ============================================
+// Supported languages for code editor
+
+export const LANGUAGES = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "java", label: "Java" },
+  { value: "cpp", label: "C++" },
+  { value: "html", label: "HTML" },
+  { value: "css", label: "CSS" },
+  { value: "typescript", label: "TypeScript" },
+];
+
+// ============================================
+// DEFAULT VALUES
+// ============================================
+
+export const DEFAULT_LANGUAGE = "javascript";
+export const DEFAULT_CODE = "// Start coding here...";

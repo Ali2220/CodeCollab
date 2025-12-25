@@ -1,10 +1,25 @@
+/*
+ * ============================================
+ * LOGIN PAGE
+ * ============================================
+ * 
+ * This page allows users to log in to their account.
+ * 
+ * Flow:
+ * 1. User enters email and password
+ * 2. Click "Sign In" button
+ * 3. Call login API
+ * 4. If successful, redirect to dashboard
+ * 5. If error, show error message
+ */
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Code2, Mail, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
-import Input from "../components/common/Input";
-import Button from "../components/common/Button";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 /**
  * Login Page

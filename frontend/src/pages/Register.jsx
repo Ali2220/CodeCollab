@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Code2, User, Mail, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
-import Input from "../components/common/Input";
-import Button from "../components/common/Button";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 /**
  * Register Page

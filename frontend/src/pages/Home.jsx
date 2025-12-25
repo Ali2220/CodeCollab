@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Code2, Users, Video, Sparkles } from "lucide-react";
-import Button from "../components/common/Button";
+import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 
 /**
@@ -30,7 +30,7 @@ const Home = () => {
             <div className="flex space-x-4">
               {isAuthenticated ? (
                 <Link to="/dashboard">
-                  <Button>Go to Dashboard</Button>
+                  <Button className="bg-green-400">Go to Dashboard</Button>
                 </Link>
               ) : (
                 <>
@@ -66,7 +66,7 @@ const Home = () => {
           <div className="flex justify-center space-x-4">
             {isAuthenticated ? (
               <Link to="/dashboard">
-                <Button className="text-lg px-8 py-3">Open Dashboard →</Button>
+                <Button className="text-lg px-8 py-3 bg-green-400">Open Dashboard →</Button>
               </Link>
             ) : (
               <>
