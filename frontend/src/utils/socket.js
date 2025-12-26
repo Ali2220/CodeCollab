@@ -22,7 +22,7 @@ import { io } from "socket.io-client";
 // ============================================
 
 // Backend server URL (where Socket.io server is running)
-const SOCKET_URL = "http://localhost:3000";
+const SOCKET_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
 // ============================================
 // CREATE SOCKET CONNECTION

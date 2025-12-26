@@ -22,14 +22,14 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   })
 );
@@ -57,7 +57,7 @@ initializeSocket(io)
 app.use(errorHandler)
 
 
-httpServer.listen(3000, () => {
+httpServer.listen(process.env.PORT || 3000, () => {
     console.log('Server Started on port 3000');
     console.log('Socket.IO server started.');
 })

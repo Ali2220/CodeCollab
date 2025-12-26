@@ -396,7 +396,7 @@ const Dashboard = () => {
                 placeholder="Enter room ID"
               />
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
+                <Button type="submit" className="flex-1 bg-green-400">
                   Join
                 </Button>
                 <Button
